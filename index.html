@@ -1039,7 +1039,7 @@
             max-width: 400px; margin-bottom: 36px;
         }
 
-        .kofi-btn {
+        .support-btn {
             display: inline-flex; align-items: center; gap: 11px;
             padding: 14px 30px; border-radius: 12px;
             background: rgba(74,222,128,0.09);
@@ -1048,7 +1048,7 @@
             text-decoration: none; font-weight: 600; font-size: 0.93em;
             transition: all 0.25s;
         }
-        .kofi-btn:hover {
+        .support-btn:hover {
             background: rgba(74,222,128,0.17);
             border-color: rgba(74,222,128,0.6);
             transform: translateY(-2px);
@@ -1130,13 +1130,13 @@
         /* Anti-wobble: a 2px hit-area below the button catches the cursor at the
            original edge; on hover the button translates up and the pseudo grows
            to 4px so the cursor's original Y stays inside the (transformed) area. */
-        .kofi-btn, .btn-green, .btn-outline { position: relative; }
-        .kofi-btn::after, .btn-green::after, .btn-outline::after {
+        .support-btn, .btn-green, .btn-outline { position: relative; }
+        .support-btn::after, .btn-green::after, .btn-outline::after {
             content: '';
             position: absolute;
             left: 0; right: 0; bottom: -2px; height: 2px;
         }
-        .kofi-btn:hover::after,
+        .support-btn:hover::after,
         .btn-green:hover::after, .btn-outline:hover::after {
             bottom: -4px; height: 4px;
         }
@@ -1795,13 +1795,10 @@
         <div class="support-text">
             <p class="support-eyebrow">Open Source · Free forever</p>
             <h3 class="support-h">Built with passion,<br><em>free for everyone.</em></h3>
-            <p class="support-p">Schnelle Umlaute will always be free and open source. If it makes your daily typing a little better, a coffee helps keep the project alive and growing.</p>
+            <p class="support-p">Schnelle Umlaute will always be free and open source. If it makes your daily typing a little better, support the project on GitHub: star it, report issues, or contribute.</p>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-                <a href="https://github.com/sponsors/Maik-0000FF" class="kofi-btn" rel="noopener" target="_blank">
-                    Sponsor on GitHub
-                </a>
-                <a href="https://ko-fi.com/maik0000ff" class="kofi-btn" rel="noopener" target="_blank">
-                    Support on Ko-fi
+                <a href="https://github.com/Maik-0000FF/schnelle-umlaute" class="support-btn" rel="noopener" target="_blank">
+                    Support the project on GitHub
                 </a>
             </div>
         </div>
@@ -1831,7 +1828,6 @@
         <a href="https://github.com/Maik-0000FF/schnelle-umlaute" rel="noopener" target="_blank">GitHub</a>
         <a href="https://codeberg.org/Maik-0000FF/schnelle-umlaute" rel="noopener" target="_blank">Codeberg (Mirror)</a>
         <a href="https://github.com/Maik-0000FF/schnelle-umlaute/issues" rel="noopener" target="_blank">Issues</a>
-        <a href="https://ko-fi.com/maik0000ff" rel="noopener" target="_blank">Support</a>
         <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="license noopener" target="_blank">GPL-3.0-or-later</a>
     </div>
 </footer>
