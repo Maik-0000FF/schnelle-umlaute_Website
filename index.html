@@ -6,7 +6,7 @@
 
     <title>Schnelle Umlaute | PowerToys Quick Accent Alternative for Linux</title>
     <meta name="title" content="Schnelle Umlaute | PowerToys Quick Accent Alternative for Linux">
-    <meta name="description" content="PowerToys Quick Accent Alternative for Linux - Type German umlauts (ä, ö, ü, ß), French accents (é, è, ê, ç), Spanish characters (ñ, á, í), Portuguese accents (ã, õ, ç), Braille Unicode characters (⠁⠃⠉⠙⠑) with hold + space gesture. Native Fcitx5 addon with accent cycling, snippets, emoji mappings. No clipboard interference, works on X11 and Wayland.">
+    <meta name="description" content="PowerToys Quick Accent Alternative for Linux - Type German umlauts (ä, ö, ü, ß), French accents (é, è, ê, ç), Spanish characters (ñ, á, í), Portuguese accents (ã, õ, ç), Braille Unicode characters (⠁⠃⠉⠙⠑) with hold + space gesture. Native Fcitx5 addon with accent cycling, snippets, emoji mappings, switchable language profiles, 47 presets, and an on-screen cycle overlay. No clipboard interference, works on X11 and Wayland.">
     <meta name="keywords" content="PowerToys, Quick Accent, Linux, German umlauts, Fcitx5, keyboard, input method, umlaut, ä, ö, ü, ß, Arch Linux, Ubuntu, Debian, Linux Mint, Fedora, openSUSE, Wayland, X11, accent cycling, snippets, text expansion, emoji, special characters, diacritics, accented characters, Linux input method, keyboard layout, Umlaute tippen Linux, deutsche Sonderzeichen, Umlaute ohne Nummernblock, accents français Linux, caractères accentués, accent aigu grave circonflexe, é è ê ë à ç, clavier français, acentos español Linux, tilde eñe, á é í ó ú ñ, teclado español, caracteres especiales, acentos português Linux, caracteres acentuados, teclado português, ã õ á é í ó ú â ê ô à ç, cedilha, til, digitar acentos Linux, Sonderzeichen Linux, diakritische Zeichen, Braille Unicode, ⠁⠃⠉⠙⠑, Braille input Linux">
     <meta name="author" content="Maik-0000FF">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -19,9 +19,12 @@
     <link rel="alternate" hreflang="x-default" href="https://maik-0000ff.github.io/schnelle-umlaute_Website/">
 
     <link rel="icon" type="image/png" sizes="192x192" href="docs/assets/favicon-192.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="docs/assets/favicon-192.png">
     <link rel="icon" type="image/png" sizes="1024x1024" href="docs/assets/favicon-1024.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" type="image/svg+xml" href="docs/assets/schnelle-umlaute-icon.svg">
+    <link rel="mask-icon" href="docs/assets/schnelle-umlaute-icon.svg" color="#4ade80">
     <link rel="apple-touch-icon" href="docs/assets/apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="152x152" href="docs/assets/apple-touch-icon-152.png">
     <link rel="apple-touch-icon" sizes="120x120" href="docs/assets/apple-touch-icon-120.png">
@@ -41,7 +44,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://maik-0000ff.github.io/schnelle-umlaute_Website/">
     <meta property="og:title" content="Schnelle Umlaute - PowerToys Quick Accent for Linux">
-    <meta property="og:description" content="Native Fcitx5 addon for typing German umlauts with hold + space gesture. Features accent cycling, snippets, emoji mappings. No clipboard interference, works on X11 and Wayland.">
+    <meta property="og:description" content="Native Fcitx5 addon for typing German umlauts with hold + space gesture. Features accent cycling, snippets, emoji mappings, switchable language profiles, and an on-screen cycle overlay. No clipboard interference, works on X11 and Wayland.">
     <meta property="og:image" content="https://maik-0000ff.github.io/schnelle-umlaute_Website/docs/assets/favicon-1024.png">
     <meta property="og:image:width" content="1024">
     <meta property="og:image:height" content="1024">
@@ -95,6 +98,9 @@
             "Text snippet expansion",
             "Emoji and symbol mappings",
             "Per-app blacklist and whitelist filter",
+            "Named mapping profiles with hotkey switching and cycling",
+            "47 ready-made language and symbol presets",
+            "On-screen cycle overlay at mouse pointer or text caret",
             "No clipboard interference",
             "X11 and Wayland support"
         ],
@@ -1559,7 +1565,7 @@
     <h2 class="section-h2 reveal">
         Built different.<br><span class="g">Works everywhere.</span>
     </h2>
-    <p class="section-p reveal">Six reasons why Schnelle Umlaute is the right choice for Linux power users.</p>
+    <p class="section-p reveal">Eight reasons why Schnelle Umlaute is the right choice for Linux power users.</p>
 
     <div class="feat-grid">
 
@@ -1650,6 +1656,50 @@
                 <div class="map-row"><span class="map-key">s</span><span class="map-arr">→</span><span class="map-val">ß</span></div>
                 <div class="map-row"><span class="map-key">p</span><span class="map-arr">→</span><span class="map-val">π</span></div>
                 <div class="map-row"><span class="map-key">g</span><span class="map-arr">→</span><span class="map-val">git push…</span></div>
+            </div>
+        </article>
+
+        <!-- ROW 4: [07 wide 2col] [08 1col] -->
+
+        <!-- 07 Profiles & Presets — fw-all (wide on desktop + tablet) -->
+        <article class="feat-card fw-all reveal" aria-labelledby="f7">
+            <span class="feat-num" aria-hidden="true">07</span>
+            <div class="feat-icon" aria-hidden="true">⧉</div>
+            <h3 class="feat-title" id="f7">Profiles &amp; Presets</h3>
+            <p class="feat-body">Group your mappings into named profiles, one for German, one for French, one for Emoji, and switch the active set with a hotkey or cycle through your favorites. 47 ready-made language and symbol presets are included.</p>
+            <div class="tag-row" aria-label="Included presets">
+                <span class="tag">German</span>
+                <span class="tag">Français</span>
+                <span class="tag">Español</span>
+                <span class="tag">Português</span>
+                <span class="tag">Emoji</span>
+                <span class="tag">Braille</span>
+                <span class="tag">Math</span>
+                <span class="tag">IPA</span>
+                <span class="tag">+ 39 more</span>
+            </div>
+            <div class="cy-row" role="img" aria-label="Profile cycling: German → Français → Emoji">
+                <span class="tag">German</span>
+                <span class="cy-sep" aria-hidden="true">→</span>
+                <span class="tag">Français</span>
+                <span class="cy-sep" aria-hidden="true">→</span>
+                <span class="tag">Emoji</span>
+                <span class="cy-sep" aria-hidden="true" style="margin-left:4px">·</span>
+                <span class="feat-body" style="margin:0">one hotkey</span>
+            </div>
+        </article>
+
+        <!-- 08 On-Screen Overlay — 1col -->
+        <article class="feat-card reveal d1" aria-labelledby="f8">
+            <span class="feat-num" aria-hidden="true">08</span>
+            <div class="feat-icon" aria-hidden="true">◎</div>
+            <h3 class="feat-title" id="f8">On-Screen Overlay</h3>
+            <p class="feat-body">A live indicator shows the accent variants as you cycle, right where you need it. Wayland (wlr-layer-shell); the caret mode also works on X11.</p>
+            <div class="tag-row" aria-label="Overlay positions">
+                <span class="tag">At mouse</span>
+                <span class="tag">At caret</span>
+                <span class="tag">Fixed grid</span>
+                <span class="tag">Timing bar</span>
             </div>
         </article>
 
@@ -1784,6 +1834,14 @@
         <details class="q">
             <summary>Can I disable it in specific apps?</summary>
             <p class="q-body">Yes. The App Filter lets you set a blacklist (disable in listed apps) or a whitelist (enable only in listed apps). Useful for games, password managers, IP/number-only fields, or apps with conflicting shortcuts.</p>
+        </details>
+        <details class="q">
+            <summary>Can I switch between languages quickly?</summary>
+            <p class="q-body">Yes. Group your mappings into named profiles — one for German, one for French, one for Emoji — and switch the active one with a hotkey or cycle through your favorites. 47 ready-made language and symbol presets (German, Français, Español, Português, Braille, Emoji, Math, IPA, and more) are included, so you rarely start from scratch.</p>
+        </details>
+        <details class="q">
+            <summary>Is there an on-screen indicator when cycling?</summary>
+            <p class="q-body">Optionally, yes. A cycle overlay shows the accent variants as you step through them — anchored at the mouse pointer, at the text caret where you type, or a fixed grid position, with an optional timing progress bar. It uses the Wayland <code>wlr-layer-shell</code> protocol (KDE Plasma, sway, Hyprland, …); the caret mode also works on X11. Every other feature works without it.</p>
         </details>
     </div>
 </section>
