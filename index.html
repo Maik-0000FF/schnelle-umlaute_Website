@@ -200,11 +200,11 @@
         "mainEntity": [
             { "@type": "Question", "name": "What is Schnelle Umlaute?", "acceptedAnswer": { "@type": "Answer", "text": "A native Fcitx5 addon for Linux. Type German umlauts, French accents, or any Unicode character using the same hold + space gesture as Windows PowerToys Quick Accent. System-wide, lightweight, no root needed." } },
             { "@type": "Question", "name": "Does it work on Wayland?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Natively on both X11 and Wayland, no extra configuration. It integrates directly with Fcitx5." } },
-            { "@type": "Question", "name": "Does it touch the clipboard?", "acceptedAnswer": { "@type": "Answer", "text": "Never. Unlike xdotool-based workarounds, Schnelle Umlaute uses Fcitx5's commitString() API — direct insertion, clipboard untouched." } },
+            { "@type": "Question", "name": "Does it touch the clipboard?", "acceptedAnswer": { "@type": "Answer", "text": "Never. Unlike xdotool-based workarounds, Schnelle Umlaute uses Fcitx5's commitString() API: direct insertion, clipboard untouched." } },
             { "@type": "Question", "name": "What characters can I type?", "acceptedAnswer": { "@type": "Answer", "text": "German umlauts by default (ä ö ü ß Ä Ö Ü). With unlimited configurable mappings: French accents, Spanish, Portuguese, Braille Unicode, emojis, math symbols, full text snippets." } },
             { "@type": "Question", "name": "Which distros are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Supported on Arch Linux, Ubuntu/Debian, Linux Mint, Fedora, and openSUSE. Works on any distro with Fcitx5." } },
             { "@type": "Question", "name": "Can I adjust the timing?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via fcitx5-config-qt. Default: 400ms lowercase, 700ms uppercase. Adjustable from 50ms to 2000ms to match your typing speed." } },
-            { "@type": "Question", "name": "Can I use it for text snippets?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Map any key to a full phrase — e.g. hold m + Space to insert your email address, g for a Vim command like ggVGy (select all + yank), or u for sudo apt update. Works with any length of text." } },
+            { "@type": "Question", "name": "Can I use it for text snippets?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Map any key to a full phrase, e.g. hold m + Space to insert your email address, g for a Vim command like ggVGy (select all + yank), or u for sudo apt update. Works with any length of text." } },
             { "@type": "Question", "name": "What leader keys are available?", "acceptedAnswer": { "@type": "Answer", "text": "Space (default), Arrow keys, Alt/AltGr, or up to two custom keys of your choice. Multiple leader keys can be active at the same time. Custom leaders support dual hand-split mode for ergonomic typing." } },
             { "@type": "Question", "name": "Can I disable it in specific apps?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The App Filter lets you set a blacklist (disable in listed apps) or a whitelist (enable only in listed apps). Useful for games, password managers, IP/number-only fields, or apps with conflicting shortcuts." } }
         ]
@@ -603,7 +603,7 @@
             display: flex; align-items: center;
             gap: 14px;
             flex-wrap: nowrap;
-            height: 68px; /* fixed height — prevents jumping */
+            height: 68px; /* fixed height, prevents jumping */
         }
 
         .key {
@@ -1444,7 +1444,7 @@
 
             <p class="hero-sub">
                 The <strong>PowerToys Quick Accent</strong> experience, native on Linux.<br>
-                Hold a key, press Space — get ä, ö, ü, ß, é, ñ instantly.<br>
+                Hold a key, press Space: get ä, ö, ü, ß, é, ñ instantly.<br>
                 No clipboard. No root. No compromises.
             </p>
 
@@ -1495,7 +1495,7 @@
                     <span class="tdot tdot-r"></span>
                     <span class="tdot tdot-y"></span>
                     <span class="tdot tdot-g"></span>
-                    <span class="terminal-title">bash — ~/schnelle-umlaute</span>
+                    <span class="terminal-title">bash: ~/schnelle-umlaute</span>
                 </div>
                 <div class="terminal-body" id="term-body">
                     <noscript>
@@ -1571,7 +1571,7 @@
 
         <!-- ROW 1: [01 wide 2col] [02 1col] -->
 
-        <!-- 01 Accent Cycling — fw-all (wide on desktop + tablet) -->
+        <!-- 01 Accent Cycling: fw-all (wide on desktop + tablet) -->
         <article class="feat-card fw-all reveal" aria-labelledby="f1">
             <span class="feat-num" aria-hidden="true">01</span>
             <div class="feat-icon" aria-hidden="true">↺</div>
@@ -1588,7 +1588,7 @@
             </div>
         </article>
 
-        <!-- 02 No Clipboard — 1col -->
+        <!-- 02 No Clipboard: 1col -->
         <article class="feat-card reveal d1" aria-labelledby="f2">
             <span class="feat-num" aria-hidden="true">02</span>
             <div class="feat-icon" aria-hidden="true">⊘</div>
@@ -1598,7 +1598,7 @@
 
         <!-- ROW 2: [03 1col] [04 wide 2col] -->
 
-        <!-- 03 Snippets — 1col -->
+        <!-- 03 Snippets: 1col -->
         <article class="feat-card reveal d1" aria-labelledby="f3">
             <span class="feat-num" aria-hidden="true">03</span>
             <div class="feat-icon" aria-hidden="true">≡</div>
@@ -1611,12 +1611,12 @@
             </div>
         </article>
 
-        <!-- 04 Emoji + Symbols — fw-desk (wide on desktop only) -->
+        <!-- 04 Emoji + Symbols: fw-desk (wide on desktop only) -->
         <article class="feat-card fw-desk reveal d2" aria-labelledby="f4">
             <span class="feat-num" aria-hidden="true">04</span>
             <div class="feat-icon" aria-hidden="true">✦</div>
             <h3 class="feat-title" id="f4">Emoji, Symbols &amp; Braille</h3>
-            <p class="feat-body">Map any Unicode — if it exists, you can type it.</p>
+            <p class="feat-body">Map any Unicode: if it exists, you can type it.</p>
             <div class="sym-grid" aria-label="Supported symbol examples">
                 <span class="sym">∞</span><span class="sym">π</span><span class="sym">√</span>
                 <span class="sym">Σ</span><span class="sym">Ω</span><span class="sym">Δ</span>
@@ -1627,7 +1627,7 @@
 
         <!-- ROW 3: [05 1col] [06 wide 2col] -->
 
-        <!-- 05 X11 + Wayland — 1col -->
+        <!-- 05 X11 + Wayland: 1col -->
         <article class="feat-card reveal d1" aria-labelledby="f5">
             <span class="feat-num" aria-hidden="true">05</span>
             <div class="feat-icon" aria-hidden="true">□</div>
@@ -1643,7 +1643,7 @@
             </div>
         </article>
 
-        <!-- 06 Configurable — fw-all (wide on desktop + tablet) -->
+        <!-- 06 Configurable: fw-all (wide on desktop + tablet) -->
         <article class="feat-card fw-all reveal d2" aria-labelledby="f6">
             <span class="feat-num" aria-hidden="true">06</span>
             <div class="feat-icon" aria-hidden="true">◈</div>
@@ -1661,7 +1661,7 @@
 
         <!-- ROW 4: [07 wide 2col] [08 1col] -->
 
-        <!-- 07 Profiles & Presets — fw-all (wide on desktop + tablet) -->
+        <!-- 07 Profiles & Presets: fw-all (wide on desktop + tablet) -->
         <article class="feat-card fw-all reveal" aria-labelledby="f7">
             <span class="feat-num" aria-hidden="true">07</span>
             <div class="feat-icon" aria-hidden="true">⧉</div>
@@ -1689,7 +1689,7 @@
             </div>
         </article>
 
-        <!-- 08 On-Screen Overlay — 1col -->
+        <!-- 08 On-Screen Overlay: 1col -->
         <article class="feat-card reveal d1" aria-labelledby="f8">
             <span class="feat-num" aria-hidden="true">08</span>
             <div class="feat-icon" aria-hidden="true">◎</div>
@@ -1734,7 +1734,7 @@
                 3
             </div>
             <h3>Get Umlaut</h3>
-            <p><span class="kk">ä</span> <span class="kk">ö</span> <span class="kk">ü</span> <span class="kk">ß</span> — instantly</p>
+            <p><span class="kk">ä</span> <span class="kk">ö</span> <span class="kk">ü</span> <span class="kk">ß</span>, instantly</p>
         </div>
         <div class="step-item reveal d3" role="listitem">
             <div class="step-circle" aria-hidden="true">
@@ -1809,7 +1809,7 @@
         </details>
         <details class="q">
             <summary>Does it touch the clipboard?</summary>
-            <p class="q-body">Never. Unlike xdotool-based workarounds, Schnelle Umlaute uses Fcitx5's <code>commitString()</code> API — direct insertion, clipboard untouched.</p>
+            <p class="q-body">Never. Unlike xdotool-based workarounds, Schnelle Umlaute uses Fcitx5's <code>commitString()</code> API: direct insertion, clipboard untouched.</p>
         </details>
         <details class="q">
             <summary>What characters can I type?</summary>
@@ -1825,7 +1825,7 @@
         </details>
         <details class="q">
             <summary>Can I use it for text snippets?</summary>
-            <p class="q-body">Yes. Map any key to a full phrase — e.g. hold <kbd>m</kbd> + Space to insert your email address, <kbd>g</kbd> for a Vim command like <code>ggVGy</code> (select all + yank), or <kbd>u</kbd> for <code>sudo apt update</code>. Works with any length of text.</p>
+            <p class="q-body">Yes. Map any key to a full phrase, e.g. hold <kbd>m</kbd> + Space to insert your email address, <kbd>g</kbd> for a Vim command like <code>ggVGy</code> (select all + yank), or <kbd>u</kbd> for <code>sudo apt update</code>. Works with any length of text.</p>
         </details>
         <details class="q">
             <summary>What leader keys are available?</summary>
@@ -1837,11 +1837,11 @@
         </details>
         <details class="q">
             <summary>Can I switch between languages quickly?</summary>
-            <p class="q-body">Yes. Group your mappings into named profiles — one for German, one for French, one for Emoji — and switch the active one with a hotkey or cycle through your favorites. 47 ready-made language and symbol presets (German, Français, Español, Português, Braille, Emoji, Math, IPA, and more) are included, so you rarely start from scratch.</p>
+            <p class="q-body">Yes. Group your mappings into named profiles (one for German, one for French, one for Emoji) and switch the active one with a hotkey or cycle through your favorites. 47 ready-made language and symbol presets (German, Français, Español, Português, Braille, Emoji, Math, IPA, and more) are included, so you rarely start from scratch.</p>
         </details>
         <details class="q">
             <summary>Is there an on-screen indicator when cycling?</summary>
-            <p class="q-body">Optionally, yes. A cycle overlay shows the accent variants as you step through them — anchored at the mouse pointer, at the text caret where you type, or a fixed grid position, with an optional timing progress bar. It uses the Wayland <code>wlr-layer-shell</code> protocol (KDE Plasma, sway, Hyprland, …); the caret mode also works on X11. Every other feature works without it.</p>
+            <p class="q-body">Optionally, yes. A cycle overlay shows the accent variants as you step through them, anchored at the mouse pointer, at the text caret where you type, or a fixed grid position, with an optional timing progress bar. It uses the Wayland <code>wlr-layer-shell</code> protocol (KDE Plasma, sway, Hyprland, …); the caret mode also works on X11. Every other feature works without it.</p>
         </details>
     </div>
 </section>
@@ -1959,16 +1959,16 @@
             {k:'O', r:'ö',              desc:'Type German umlauts'},
             {k:'U', r:'ü',              desc:'Type German umlauts'},
             {k:'S', r:'ß',              desc:'Type German sharp S'},
-            /* Französisch – cycling */
+            /* Französisch: cycling */
             {k:'E', r:['é','è','ê','ë'], desc:'Cycle through French accents'},
             {k:'A', r:['à','â','æ'],     desc:'Cycle through French accents'},
             {k:'O', r:['ô','œ'],         desc:'Cycle through French accents'},
             {k:'C', r:'ç',               desc:'Type French cedilla'},
-            /* Spanisch – cycling */
+            /* Spanisch: cycling */
             {k:'N', r:['ñ'],             desc:'Type Spanish Ñ'},
             {k:'A', r:['á'],             desc:'Type Spanish accents'},
             {k:'U', r:['ú','ü'],         desc:'Cycle through Spanish accents'},
-            /* Portugiesisch – cycling */
+            /* Portugiesisch: cycling */
             {k:'A', r:['ã','â','á','à'], desc:'Cycle through Portuguese accents'},
             {k:'O', r:['õ','ô','ó'],     desc:'Cycle through Portuguese accents'},
             /* Mathematik */
@@ -1992,7 +1992,7 @@
         function runDemo() {
             var s = seqs[si % seqs.length]; si++;
 
-            /* Clear output immediately — no flicker of old char */
+            /* Clear output immediately, no flicker of old char */
             dkLetter.classList.remove('pressed');
             dkSpace.classList.remove('pressed');
             dkOut.textContent = '';
@@ -2097,7 +2097,7 @@
         var cursor = document.getElementById('term-cursor');
         if (!body || !cursor) return;
 
-        /* Installation script — single unified installer, cycles distros */
+        /* Installation script: single unified installer, cycles distros */
         var groups = [
             [
                 { cmd: 'git clone https://github.com/Maik-0000FF/schnelle-umlaute.git', out: "Cloning into 'schnelle-umlaute'..." },
@@ -2188,7 +2188,7 @@
                     render();
                 }
                 if (si >= scripts.length) {
-                    /* Group done — pause, clear, switch to next group */
+                    /* Group done: pause, clear, switch to next group */
                     setTimeout(function () {
                         lines = []; si = 0;
                         gi = (gi + 1) % groups.length;
