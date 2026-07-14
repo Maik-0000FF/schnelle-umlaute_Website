@@ -203,10 +203,13 @@
             { "@type": "Question", "name": "Does it touch the clipboard?", "acceptedAnswer": { "@type": "Answer", "text": "Never. Unlike xdotool-based workarounds, Schnelle Umlaute uses Fcitx5's commitString() API: direct insertion, clipboard untouched." } },
             { "@type": "Question", "name": "What characters can I type?", "acceptedAnswer": { "@type": "Answer", "text": "German umlauts by default (ä ö ü ß Ä Ö Ü). With unlimited configurable mappings: French accents, Spanish, Portuguese, Braille Unicode, emojis, math symbols, full text snippets." } },
             { "@type": "Question", "name": "Which distros are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Supported on Arch Linux, Ubuntu/Debian, Linux Mint, Fedora, and openSUSE. Works on any distro with Fcitx5." } },
-            { "@type": "Question", "name": "Can I adjust the timing?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via fcitx5-config-qt. Default: 400ms lowercase, 700ms uppercase. Adjustable from 50ms to 2000ms to match your typing speed." } },
+            { "@type": "Question", "name": "Can I adjust the timing?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, in the bundled editor (schnelle-umlaute-editor), the same app you use for mappings, leader keys and profiles. Default: 400ms lowercase, 700ms uppercase, adjustable from 50ms to 2000ms to match your typing speed. You can also set a minimum hold, so a quick tap stays a plain letter and only a deliberate hold opens the accent window." } },
             { "@type": "Question", "name": "Can I use it for text snippets?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Map any key to a full phrase, e.g. hold m + Space to insert your email address, g for a Vim command like ggVGy (select all + yank), or u for sudo apt update. Works with any length of text." } },
             { "@type": "Question", "name": "What leader keys are available?", "acceptedAnswer": { "@type": "Answer", "text": "Space (default), Arrow keys, Alt/AltGr, or up to two custom keys of your choice. Multiple leader keys can be active at the same time. Custom leaders support dual hand-split mode for ergonomic typing." } },
-            { "@type": "Question", "name": "Can I disable it in specific apps?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The App Filter lets you set a blacklist (disable in listed apps) or a whitelist (enable only in listed apps). Useful for games, password managers, IP/number-only fields, or apps with conflicting shortcuts." } }
+            { "@type": "Question", "name": "Does it work with my keyboard layout?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, with any layout. QWERTY, QWERTZ, AZERTY, Dvorak, Colemak and others: Schnelle Umlaute reads the character a key actually produces instead of assuming a fixed key position, so where a letter sits on the board does not matter. A custom leader is stored as the physical key that was pressed, so it survives a layout switch, and Shift does not change it. Programmable and self-built keyboards (QMK, ZMK, split, ortholinear) work as well, as long as they send standard key codes, which is the default." } },
+            { "@type": "Question", "name": "Can I disable it in specific apps?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The App Filter lets you set a blacklist (disable in listed apps) or a whitelist (enable only in listed apps). Useful for games, password managers, IP/number-only fields, or apps with conflicting shortcuts." } },
+            { "@type": "Question", "name": "Can I switch between languages quickly?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Group your mappings into named profiles (one for German, one for French, one for Emoji) and switch the active one with a hotkey or cycle through your favorites. 47 ready-made language and symbol presets (German, Français, Español, Português, Braille, Emoji, Math, IPA, and more) are included, so you rarely start from scratch." } },
+            { "@type": "Question", "name": "Is there an on-screen indicator when cycling?", "acceptedAnswer": { "@type": "Answer", "text": "Optionally, yes. A cycle overlay shows the accent variants as you step through them, anchored at the mouse pointer, at the text caret where you type, or a fixed grid position, with an optional timing progress bar. It uses the Wayland wlr-layer-shell protocol (KDE Plasma, sway, Hyprland and others); the caret mode also works on X11. Every other feature works without it." } }
         ]
     }
     </script>
@@ -1821,7 +1824,7 @@
         </details>
         <details class="q">
             <summary>Can I adjust the timing?</summary>
-            <p class="q-body">Yes, via <code>fcitx5-config-qt</code>. Default: 400ms lowercase, 700ms uppercase. Adjustable from 50ms to 2000ms to match your typing speed.</p>
+            <p class="q-body">Yes, in the bundled editor (<code>schnelle-umlaute-editor</code>), the same app you use for mappings, leader keys and profiles. Default: 400ms lowercase, 700ms uppercase, adjustable from 50ms to 2000ms to match your typing speed. You can also set a minimum hold, so a quick tap stays a plain letter and only a deliberate hold opens the accent window.</p>
         </details>
         <details class="q">
             <summary>Can I use it for text snippets?</summary>
@@ -1830,6 +1833,10 @@
         <details class="q">
             <summary>What leader keys are available?</summary>
             <p class="q-body">Space (default), Arrow keys, Alt/AltGr, or up to two custom keys of your choice. Multiple leader keys can be active at the same time. Custom leaders support dual hand-split mode for ergonomic typing.</p>
+        </details>
+        <details class="q">
+            <summary>Does it work with my keyboard layout?</summary>
+            <p class="q-body">Yes, with any layout. QWERTY, QWERTZ, AZERTY, Dvorak, Colemak and others: Schnelle Umlaute reads the character a key actually produces instead of assuming a fixed key position, so where a letter sits on the board does not matter. A custom leader is stored as the <em>physical</em> key that was pressed, so it survives a layout switch, and Shift does not change it. Programmable and self-built keyboards (QMK, ZMK, split, ortholinear) work as well, as long as they send standard key codes, which is the default.</p>
         </details>
         <details class="q">
             <summary>Can I disable it in specific apps?</summary>
