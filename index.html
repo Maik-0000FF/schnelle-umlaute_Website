@@ -216,16 +216,47 @@
 
     <style>
         /* ─── TOKENS ─── */
+        /* Dark is the default and the only palette the page had. Light lives in
+           the [data-theme="light"] block below and overrides exactly these
+           colour tokens, nothing else: every rule downstream is written in
+           terms of them, so a theme is a palette swap, not a second stylesheet.
+           The theme is chosen by the toggle in the nav and remembered in
+           localStorage; a script in <head> applies it before first paint. */
         :root {
+            color-scheme: dark;
             --bg:       #08060f;
             --bg2:      #0e0b1c;
+            /* The addon's brand colours. They are the SAME in both themes: a
+               filled green button stays green on a white page. What cannot stay
+               is bright green as TEXT on white (contrast ~1.7:1, way under the
+               4.5:1 floor), so the ink variants below darken for the light theme
+               while the fills do not move. */
             --green:    #4ade80;
-            --green-d:  #166534;
             --purple:   #a855f7;
+            --green-ink:  var(--green);
+            --purple-ink: var(--purple);
             --amber:    #fbbf24;
             --text:     #f0fdf4;
             --muted:    #6b7280;
             --border:   rgba(74,222,128,0.1);
+            /* Nav and footer sit on a blurred pane of the page background. */
+            --nav-bg:   rgba(6,10,7,0.8);
+            /* Ink on a filled green surface (buttons, selection). The fill is the
+               same bright green in both themes, so this stays dark in both. */
+            --on-green: #050f07;
+            /* Tint of the glass surfaces layered over the background, as an
+               rgb triple so callers pick their own alpha: white LIFTS a dark
+               surface, black SHADES a light one. Used as rgba(var(--tint), a).
+               Without this, the light theme would keep washing white over white. */
+            --tint:     255,255,255;
+            --shadow:   0,0,0;
+            /* Code surfaces (the command pill, the mapping rows) stay dark in
+               BOTH themes, like the terminal above and like a code block on any
+               light docs page: their syntax colours are pale on purpose. Only
+               the ground beneath them changes, so they need their own tokens
+               rather than the page's tint. */
+            --code-bg:     rgba(0,0,0,0.4);
+            --code-border: rgba(255,255,255,0.06);
             --r:        14px;
             --r-lg:     22px;
 
@@ -242,6 +273,33 @@
             --edge:     max(var(--gutter),
                             calc((100% - var(--content)) / 2 + var(--gutter)));
         }
+
+        /* Light theme. Same brand, inverted ground: the greens and purples of
+           the fills are untouched, only the ground, the ink and the tint of the
+           glass flip. --tint going to black is what makes the layered surfaces
+           read as raised on a white page instead of vanishing into it. */
+        :root[data-theme="light"] {
+            color-scheme: light;
+            --bg:         #ffffff;
+            --bg2:        #f4f4f5;
+            --text:       #0f172a;
+            --muted:      #52525b;
+            --border:     rgba(22,163,74,0.18);
+            --nav-bg:     rgba(255,255,255,0.82);
+            /* Brand green and purple as INK: darkened until they clear 4.5:1 on
+               white. The fills above keep the bright originals. */
+            --green-ink:  #15803d;
+            --purple-ink: #7e22ce;
+            --tint:       0,0,0;
+            /* A 40% black wash over white would be grey, not dark, and the pale
+               syntax colours would drown in it. Give the code surfaces a solid
+               dark ground instead. */
+            --code-bg:     #14141c;
+            --code-border: rgba(255,255,255,0.08);
+        }
+
+        /* The terminal keeps its own dark chrome in both themes, the way a code
+           block does: it depicts a terminal, it is not a page surface. */
 
         /* ─── RESET ─── */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -265,7 +323,7 @@
         /* ─── SKIP LINK ─── */
         .skip-link {
             position: absolute; top: -100%; left: 16px;
-            background: var(--green); color: var(--bg);
+            background: var(--green); color: var(--on-green);
             padding: 8px 16px; border-radius: 8px;
             font-weight: 600; font-size: 0.9em;
             z-index: 9999; text-decoration: none;
@@ -315,7 +373,7 @@
             z-index: 500;
             padding: 8px var(--edge);
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(6,10,7,0.8);
+            background: var(--nav-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
@@ -332,7 +390,7 @@
         }
         .nav-icon { flex-shrink: 0; }
         .nav-logo .nl-w { color: var(--text); }
-        .nav-logo .nl-g { color: var(--green); }
+        .nav-logo .nl-g { color: var(--green-ink); }
 
         .nav-right { display: flex; gap: 10px; align-items: center; }
 
@@ -346,10 +404,24 @@
 
         .nav-mirror {
             display: inline-flex; align-items: center;
-            color: var(--green); padding: 6px;
+            color: var(--green-ink); padding: 6px;
             border-radius: 8px; transition: transform 0.2s, opacity 0.2s;
         }
         .nav-mirror:hover { opacity: 0.8; transform: scale(1.18); }
+
+        /* The theme toggle is a <button> (it acts on the page, it does not
+           navigate), styled to sit flush with the icon links beside it. */
+        .nav-theme {
+            background: none; border: 0; cursor: pointer;
+            font: inherit; line-height: 0;
+        }
+        .nav-theme:focus-visible {
+            outline: 2px solid var(--green); outline-offset: 2px;
+        }
+        /* Show the theme the click would take you to. */
+        .icon-moon { display: none; }
+        :root[data-theme="light"] .icon-sun  { display: none; }
+        :root[data-theme="light"] .icon-moon { display: inline; }
 
         /* ─── ORB BACKGROUND ─── */
         .orbs {
@@ -459,7 +531,7 @@
         }
 
         .hero-h1 .accent-word {
-            color: var(--green);
+            color: var(--green-ink);
         }
 
         @keyframes slideUp { to { transform: translateY(0); } }
@@ -483,7 +555,7 @@
 
         /* ─── DEMO CARD (hero right) ─── */
         .hero-demo-card {
-            background: rgba(255,255,255,0.03);
+            background: rgba(var(--tint),0.03);
             border: 1px solid rgba(74,222,128,0.12);
             border-radius: var(--r-lg);
             padding: 32px 36px;
@@ -523,8 +595,8 @@
             background: #0e0e0e;
             border-radius: 14px;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.07);
-            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(var(--tint),0.07);
+            box-shadow: 0 24px 60px rgba(var(--shadow),0.5);
             height: 282px;
             display: flex; flex-direction: column;
             transform-style: preserve-3d;
@@ -536,7 +608,7 @@
             background: #1c1c1c;
             padding: 12px 18px;
             display: flex; align-items: center; gap: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(var(--tint),0.06);
         }
 
         .tdot {
@@ -548,7 +620,7 @@
 
         .terminal-title {
             flex: 1; text-align: center;
-            font-size: 0.75em; color: rgba(255,255,255,0.28);
+            font-size: 0.75em; color: rgba(var(--tint),0.28);
             font-family: 'Inter', sans-serif;
             letter-spacing: 0.02em;
         }
@@ -569,7 +641,7 @@
 
         .tps1  { color: #4ade80; white-space: pre; }
         .tcmd  { color: #f0f0f0; white-space: pre-wrap; word-break: break-all; }
-        .tout  { color: rgba(255,255,255,0.35); padding-left: 0; white-space: pre-wrap; }
+        .tout  { color: rgba(var(--tint),0.35); padding-left: 0; white-space: pre-wrap; }
         .tspec { color: #4ade80; font-weight: 700; }
 
         .tspec-flash {
@@ -605,7 +677,7 @@
         .demo-sublabel {
             font-size: 0.68em; font-weight: 600;
             letter-spacing: 0.12em; text-transform: uppercase;
-            color: var(--green); opacity: 0.65;
+            color: var(--green-ink); opacity: 0.65;
         }
 
         .demo-desc {
@@ -625,9 +697,9 @@
         .key {
             min-width: 58px; height: 58px;
             border-radius: 9px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-bottom: 3px solid rgba(0,0,0,0.5);
+            background: rgba(var(--tint),0.06);
+            border: 1px solid rgba(var(--tint),0.1);
+            border-bottom: 3px solid rgba(var(--shadow),0.5);
             display: flex; align-items: center; justify-content: center;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 1.2em; font-weight: 700;
@@ -641,7 +713,7 @@
             border-color: rgba(74,222,128,0.5);
             border-bottom-color: rgba(74,222,128,0.3);
             box-shadow: 0 0 18px rgba(74,222,128,0.25);
-            color: var(--green);
+            color: var(--green-ink);
             transform: translateY(2px);
         }
 
@@ -650,7 +722,7 @@
         .demo-result {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 2.8em; font-weight: 700;
-            color: var(--green);
+            color: var(--green-ink);
             width: 64px; text-align: center;
             flex-shrink: 0;
             transition: opacity 0.2s;
@@ -680,7 +752,7 @@
         .section-eyebrow {
             font-size: 0.72em; font-weight: 600;
             letter-spacing: 0.18em; text-transform: uppercase;
-            color: var(--green);
+            color: var(--green-ink);
             margin-bottom: 12px;
             display: flex; align-items: center; gap: 10px;
         }
@@ -701,7 +773,7 @@
         }
 
         .section-h2 .g {
-            color: var(--green);
+            color: var(--green-ink);
         }
 
         .section-p {
@@ -718,8 +790,8 @@
         }
 
         .feat-card {
-            background: rgba(255,255,255,0.025);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(var(--tint),0.025);
+            border: 1px solid rgba(var(--tint),0.06);
             border-radius: var(--r-lg);
             padding: 28px;
             position: relative; overflow: hidden;
@@ -790,7 +862,7 @@
         .cy-c.on {
             background: rgba(74,222,128,0.18);
             border-color: rgba(74,222,128,0.5);
-            color: var(--green);
+            color: var(--green-ink);
             transform: scale(1.1);
             box-shadow: 0 0 16px rgba(74,222,128,0.2);
         }
@@ -799,8 +871,8 @@
 
         .code-pill {
             display: inline-block;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
             border-radius: 8px;
             padding: 12px 16px;
             margin-top: 14px;
@@ -845,7 +917,7 @@
             margin: 0 auto 20px;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 1.5em; font-weight: 700;
-            color: var(--green);
+            color: var(--green-ink);
             position: relative;
         }
 
@@ -887,8 +959,8 @@
 
         .kk {
             display: inline-block;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(var(--tint),0.07);
+            border: 1px solid rgba(var(--tint),0.1);
             border-radius: 5px;
             padding: 1px 7px;
             font-family: monospace; font-size: 0.9em;
@@ -941,7 +1013,7 @@
         .testi-q {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 3.5em; line-height: 0.6;
-            color: var(--green);
+            color: var(--green-ink);
             display: block; margin-bottom: 24px;
             opacity: 0.5;
         }
@@ -959,7 +1031,7 @@
         }
 
         .testi-author { color: var(--muted); font-size: 0.85em; }
-        .testi-author strong { color: var(--green); }
+        .testi-author strong { color: var(--green-ink); }
         .testi-author a { color: inherit; text-decoration: none; transition: text-shadow 0.25s; }
         .testi-author a:hover { text-shadow: 0 0 8px rgba(74,222,128,0.9), 0 0 20px rgba(74,222,128,0.7), 0 0 40px rgba(74,222,128,0.4); }
 
@@ -967,7 +1039,7 @@
         .faq-list { max-width: 660px; margin: 48px auto 0; }
 
         details.q {
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(var(--tint),0.06);
             overflow: hidden;
         }
 
@@ -980,8 +1052,8 @@
             transition: color 0.2s;
         }
         details.q summary::-webkit-details-marker { display: none; }
-        details.q summary:hover { color: var(--green); }
-        details.q summary:hover::after { color: var(--green); }
+        details.q summary:hover { color: var(--green-ink); }
+        details.q summary:hover::after { color: var(--green-ink); }
         details.q summary::after {
             content: '+';
             font-size: 1.3em; color: var(--muted);
@@ -996,7 +1068,7 @@
         }
 
         .q-body code {
-            background: rgba(255,255,255,0.06);
+            background: rgba(var(--tint),0.06);
             padding: 1px 6px; border-radius: 4px;
             font-family: monospace; font-size: 0.88em;
             color: rgba(74,222,128,0.8);
@@ -1040,7 +1112,7 @@
         .support-eyebrow {
             font-size: 0.72em; font-weight: 600;
             letter-spacing: 0.18em; text-transform: uppercase;
-            color: var(--green); opacity: 0.7;
+            color: var(--green-ink); opacity: 0.7;
             display: flex; align-items: center; gap: 10px;
             margin-bottom: 18px;
         }
@@ -1054,7 +1126,7 @@
             font-weight: 700; line-height: 1.15; letter-spacing: -0.02em;
             margin-bottom: 16px;
         }
-        .support-h em { font-style: normal; color: var(--green); }
+        .support-h em { font-style: normal; color: var(--green-ink); }
 
         .support-p {
             color: var(--muted); font-size: 0.93em; line-height: 1.8;
@@ -1066,7 +1138,7 @@
             padding: 14px 30px; border-radius: 12px;
             background: rgba(74,222,128,0.09);
             border: 1px solid rgba(74,222,128,0.28);
-            color: var(--green);
+            color: var(--green-ink);
             text-decoration: none; font-weight: 600; font-size: 0.93em;
             transition: all 0.25s;
         }
@@ -1138,16 +1210,16 @@
 
         .btn-green {
             background: var(--green);
-            color: #050f07;
+            color: var(--on-green);
         }
         .btn-green:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(74,222,128,0.3); }
 
         .btn-outline {
             background: transparent;
             color: var(--text);
-            border: 1px solid rgba(255,255,255,0.12);
+            border: 1px solid rgba(var(--tint),0.12);
         }
-        .btn-outline:hover { border-color: rgba(255,255,255,0.28); transform: translateY(-2px); }
+        .btn-outline:hover { border-color: rgba(var(--tint),0.28); transform: translateY(-2px); }
 
         /* Anti-wobble: a 2px hit-area below the button catches the cursor at the
            original edge; on hover the button translates up and the pseudo grows
@@ -1174,7 +1246,7 @@
 
         .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
         footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
-        footer a:hover { color: var(--green); }
+        footer a:hover { color: var(--green-ink); }
 
         /* ─── SCROLL REVEALS ─── */
         .reveal {
@@ -1221,14 +1293,16 @@
         }
         .map-row {
             display: flex; align-items: center; gap: 6px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
             border-radius: 8px;
             padding: 8px 10px;
             font-family: monospace; font-size: 0.85em;
         }
         .map-key  { color: #c4b5fd; }
         .map-arr  { color: var(--muted); }
+        /* On the dark code surface, so the BRIGHT brand green, not the ink
+           variant the light theme darkens for white backgrounds. */
         .map-val  { color: var(--green); }
 
         /* ─── HERO TIMING TIMELINE ─── */
@@ -1246,7 +1320,7 @@
             display: inline-block;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase;
-            color: var(--green);
+            color: var(--green-ink);
             padding: 5px 14px; border-radius: 100px;
             border: 1px solid rgba(74,222,128,0.2);
             background: rgba(74,222,128,0.05);
@@ -1257,7 +1331,7 @@
             max-width: 620px; margin: 0; letter-spacing: -0.01em;
         }
         .ht-lead strong { color: var(--text); font-weight: 600; }
-        .ht-lead em { color: var(--green); font-style: normal; font-weight: 600; }
+        .ht-lead em { color: var(--green-ink); font-style: normal; font-weight: 600; }
 
         .ht-stage { display: flex; align-items: center; gap: 26px; }
         .ht-side {
@@ -1273,7 +1347,7 @@
             transition: color 0.18s ease, text-shadow 0.18s ease, transform 0.18s ease;
         }
         .ht-out.hit {
-            color: var(--green);
+            color: var(--green-ink);
             text-shadow: 0 0 32px rgba(74,222,128,0.5);
             transform: scale(1.08);
         }
@@ -1281,8 +1355,8 @@
         .ht-axis { flex: 1; min-width: 0; position: relative; padding: 34px 12px 30px; }
         .ht-track {
             position: relative; height: 8px; border-radius: 100px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(var(--tint),0.05);
+            border: 1px solid rgba(var(--tint),0.08);
         }
         .ht-leadzone {
             position: absolute; top: 50%; height: 13px;
@@ -1297,7 +1371,7 @@
             position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
             margin-bottom: 9px; white-space: nowrap;
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.66rem; color: var(--purple);
+            font-size: 0.66rem; color: var(--purple-ink);
             opacity: 0.85; pointer-events: none;
         }
         .ht-window {
@@ -1321,7 +1395,7 @@
             border-radius: 6px;
             background: var(--green);
             border: 2px solid var(--bg);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 12px rgba(74,222,128,0.45);
+            box-shadow: 0 2px 10px rgba(var(--shadow),0.5), 0 0 12px rgba(74,222,128,0.45);
             cursor: ew-resize; touch-action: none; z-index: 4;
         }
         .ht-handle::after {
@@ -1333,7 +1407,7 @@
             position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
             margin-bottom: 9px; white-space: nowrap;
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 0.72rem; color: var(--green);
+            font-size: 0.72rem; color: var(--green-ink);
             padding: 3px 10px; border-radius: 7px;
             background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
             pointer-events: none;
@@ -1357,7 +1431,7 @@
         }
         .ht-tick::before {
             content: ''; position: absolute; left: 50%; top: -15px;
-            width: 1px; height: 6px; background: rgba(255,255,255,0.15);
+            width: 1px; height: 6px; background: rgba(var(--tint),0.15);
             transform: translateX(-50%);
         }
         .ht-readout {
@@ -1365,7 +1439,7 @@
             font-size: 0.86rem; color: var(--muted);
             font-family: 'Space Grotesk', sans-serif;
         }
-        .ht-readout b { color: var(--green); font-size: 1.1rem; font-weight: 700; }
+        .ht-readout b { color: var(--green-ink); font-size: 1.1rem; font-weight: 700; }
 
         @media (max-width: 760px) {
             .hero-stack { gap: 44px; }
@@ -1417,6 +1491,23 @@
             .demo-result { font-size: 2em; width: 48px; }
         }
     </style>
+
+    <!-- Apply the stored theme BEFORE the first paint. Any later and the page
+         renders dark for a frame and then flips, which is the flash every
+         theme switcher has to design around. Dark is the default, so only a
+         stored "light" writes an attribute; the OS preference is deliberately
+         not consulted, the site is dark until the visitor says otherwise. -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) {
+                /* Private mode / storage blocked: stay on the default. */
+            }
+        }());
+    </script>
 </head>
 <body>
 
@@ -1430,6 +1521,16 @@
 <nav id="main-nav" aria-label="Main navigation">
     <a href="#" class="nav-logo"><img src="docs/assets/apple-touch-icon.png" alt="Schnelle Umlaute logo" class="nav-icon" width="42" height="42"><span class="nl-w">Schnelle</span> <span class="nl-g">Umlaute</span></a>
     <div class="nav-right">
+        <button type="button" id="theme-toggle" class="nav-mirror nav-theme" aria-label="Switch to light theme" title="Switch to light theme">
+            <!-- Shows the theme you would switch TO: a sun while dark, a moon while light. -->
+            <svg class="icon-sun" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0">
+                <circle cx="12" cy="12" r="4.2"/>
+                <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>
+            </svg>
+            <svg class="icon-moon" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+                <path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/>
+            </svg>
+        </button>
         <a href="https://codeberg.org/Maik-0000FF/schnelle-umlaute" class="nav-mirror" rel="noopener" target="_blank" aria-label="Source on Codeberg (mirror)" title="Also on Codeberg (mirror)">
             <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
                 <path d="M11.999.747A11.974 11.974 0 0 0 0 12.75c0 2.254.635 4.465 1.833 6.376L11.837 6.19c.072-.092.251-.092.323 0l4.178 5.402h-2.992l.065.239h3.113l.882 1.138h-3.674l.103.374h3.86l.777 1.003h-4.358l.135.483h4.593l.695.894h-5.038l.165.589h5.326l.609.785h-5.717l.182.65h6.038l.562.727h-6.397l.183.65h6.717A12.003 12.003 0 0 0 24 12.75 11.977 11.977 0 0 0 11.999.747zm3.654 19.104.182.65h5.326c.173-.204.353-.433.513-.65zm.385 1.377.18.65h3.563c.233-.198.485-.428.712-.65zm.383 1.377.182.648h1.203c.356-.204.685-.412 1.042-.648zz"/>
@@ -1888,7 +1989,7 @@
 
 <!-- CTA Final -->
 <div class="cta-section">
-    <h2 class="cta-h2 reveal">Stop reaching for<br><span style="color:var(--green)">the number pad.</span></h2>
+    <h2 class="cta-h2 reveal">Stop reaching for<br><span style="color:var(--green-ink)">the number pad.</span></h2>
     <p class="cta-sub reveal">Free. Open source. Two minutes to install.</p>
     <div class="cta-btns reveal">
         <a href="https://github.com/Maik-0000FF/schnelle-umlaute#quick-start"
@@ -2368,6 +2469,39 @@
             requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
+    }());
+
+    /* ─── THEME TOGGLE ─── */
+    /* The <head> script already applied the stored theme, so all this does is
+       flip it, persist it, and keep the button's label honest for screen
+       readers (the icon alone says nothing to them). */
+    (function () {
+        var btn = document.getElementById('theme-toggle');
+        if (!btn) { return; }
+        var root = document.documentElement;
+
+        function label() {
+            var toLight = root.getAttribute('data-theme') !== 'light';
+            var text = toLight ? 'Switch to light theme' : 'Switch to dark theme';
+            btn.setAttribute('aria-label', text);
+            btn.setAttribute('title', text);
+        }
+        label();
+
+        btn.addEventListener('click', function () {
+            var light = root.getAttribute('data-theme') !== 'light';
+            if (light) {
+                root.setAttribute('data-theme', 'light');
+            } else {
+                root.removeAttribute('data-theme');
+            }
+            try {
+                localStorage.setItem('theme', light ? 'light' : 'dark');
+            } catch (e) {
+                /* Storage blocked: the choice holds for this page view only. */
+            }
+            label();
+        });
     }());
 
 }());
