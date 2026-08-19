@@ -265,6 +265,13 @@ have to be stated by hand in a bug report.</p>
     // Auto-repeat shows up as consecutive keydowns of the same code with no
     // keyup in between. The first such gap is the initial delay, every later
     // one a period sample.
+    //
+    // The first gap is held back rather than recorded straight away: the base
+    // key and the leader key both report keyCode 229 once the input method
+    // consumes them, so a quick leader tap during a gesture looks exactly like
+    // a first repeat and would be counted as an initial delay (turning a real
+    // 263 ms into a reported 146 ms). Only a gap that is actually followed by
+    // a second one belongs to a genuine repeat burst.
     function trackRepeat(entry) {
         var state = repeatState[entry.source];
         if (entry.event === 'keyup') {
@@ -273,22 +280,33 @@ have to be stated by hand in a bug report.</p>
         }
         if (entry.event !== 'keydown') return;
         if (!state || state.keyCode !== entry.keyCode) {
-            repeatState[entry.source] = { keyCode: entry.keyCode, time: entry.time, count: 0 };
+            repeatState[entry.source] = {
+                keyCode: entry.keyCode,
+                time: entry.time,
+                count: 0,
+                pendingDelay: null
+            };
             return;
         }
+        var gap = entry.time - state.time;
+        state.count += 1;
+        state.time = entry.time;
+        if (state.count === 1) {
+            state.pendingDelay = gap;
+            return;
+        }
+        // Only reached once a burst is confirmed, so a key that was merely
+        // pressed twice in a row never creates a bucket of its own.
         var bucket = repeatByKey[entry.keyCode];
         if (bucket === undefined) {
             bucket = { key: entry.key, delays: [], periods: [] };
             repeatByKey[entry.keyCode] = bucket;
         }
-        var gap = entry.time - state.time;
-        if (state.count === 0) {
-            bucket.delays.push(gap);
-        } else {
-            bucket.periods.push(gap);
+        if (state.pendingDelay !== null) {
+            bucket.delays.push(state.pendingDelay);
+            state.pendingDelay = null;
         }
-        state.count += 1;
-        state.time = entry.time;
+        bucket.periods.push(gap);
     }
 
     // The variant sequence of one composition, which is what the leader key
