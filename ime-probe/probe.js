@@ -31,10 +31,18 @@ var ImeProbe = (function () {
     // how a compositor-side window menu would swallow a pending key release.
     var CONTEXT_EVENTS = ['click', 'focus', 'blur'];
 
+    // Every document has its own performance.now() origin, so the raw value
+    // from the iframe is not comparable to the one from the top frame: mixing
+    // them produced negative timestamps and meaningless deltas across frames.
+    // Adding timeOrigin puts both documents on the same absolute axis.
+    function now() {
+        return performance.timeOrigin + performance.now();
+    }
+
     function record(event, field, source) {
         return {
             type: MESSAGE_TYPE,
-            time: performance.now(),
+            time: now(),
             event: event.type,
             key: typeof event.key === 'string' ? event.key : '',
             keyCode: typeof event.keyCode === 'number' ? event.keyCode : '',
@@ -54,5 +62,5 @@ var ImeProbe = (function () {
         });
     }
 
-    return { MESSAGE_TYPE: MESSAGE_TYPE, attach: attach };
+    return { MESSAGE_TYPE: MESSAGE_TYPE, attach: attach, now: now };
 })();

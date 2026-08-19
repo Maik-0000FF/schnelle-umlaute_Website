@@ -141,9 +141,12 @@ have to be stated by hand in a bug report.</p>
 
     // Values the page can derive from the event stream. Everything else about
     // the input method is out of reach from a web page.
+    // Auto-repeat timings, kept per key code rather than pooled. Real keys and
+    // input-method-consumed keys repeat at different rates on the same machine
+    // (a raw Backspace around 14 ms against 28 ms for keyCode 229), so a single
+    // pooled median lands between the two and describes neither.
+    var repeatByKey = {};
     var measured = {
-        repeatDelays: [],   // gap from the initial press to its first repeat
-        repeatPeriods: [],  // gaps between subsequent repeats
         variantCycle: [],   // longest variant sequence seen in one composition
         currentCycle: []
     };
@@ -165,8 +168,9 @@ have to be stated by hand in a bug report.</p>
 
     // The median, not the mean: a leader keypress landing inside an auto-repeat
     // burst produces one short outlier gap, and the mean would absorb it into
-    // the reported period. Both keys report keyCode 229 when the input method
-    // consumes them, so that outlier cannot be filtered out by key identity.
+    // the reported period. The base key and the leader both report keyCode 229
+    // when the input method consumes them, so that outlier cannot be filtered
+    // out by key identity even with per-key buckets.
     function median(values) {
         if (values.length === 0) return null;
         var sorted = values.slice().sort(function (a, b) { return a - b; });
@@ -226,16 +230,31 @@ have to be stated by hand in a bug report.</p>
         measurementsElement.appendChild(row);
     }
 
+    function describeRepeat(bucket) {
+        var delay = median(bucket.delays);
+        var period = median(bucket.periods);
+        var parts = [];
+        parts.push('delay ' + (delay === null ? '?' : Math.round(delay) + ' ms'));
+        parts.push('period ' + (period === null
+            ? '?'
+            : Math.round(period) + ' ms (' + (1000 / period).toFixed(1) + ' Hz)'));
+        parts.push(bucket.periods.length + ' samples');
+        return parts.join(', ');
+    }
+
     function updateMeasurements() {
-        var delay = median(measured.repeatDelays);
-        var period = median(measured.repeatPeriods);
         measurementsElement.textContent = '';
-        renderMeasurement('Auto-repeat delay',
-            delay === null ? null : Math.round(delay) + ' ms');
-        renderMeasurement('Auto-repeat period',
-            period === null ? null : Math.round(period) + ' ms ('
-                + (1000 / period).toFixed(1) + ' Hz, '
-                + measured.repeatPeriods.length + ' samples)');
+        var codes = Object.keys(repeatByKey);
+        if (codes.length === 0) {
+            renderMeasurement('Auto-repeat', null);
+        } else {
+            codes.forEach(function (code) {
+                var bucket = repeatByKey[code];
+                renderMeasurement(
+                    'Auto-repeat ' + quote(bucket.key) + ' (code ' + code + ')',
+                    describeRepeat(bucket));
+            });
+        }
         renderMeasurement('Longest variant cycle',
             measured.variantCycle.length === 0
                 ? null
@@ -257,11 +276,16 @@ have to be stated by hand in a bug report.</p>
             repeatState[entry.source] = { keyCode: entry.keyCode, time: entry.time, count: 0 };
             return;
         }
+        var bucket = repeatByKey[entry.keyCode];
+        if (bucket === undefined) {
+            bucket = { key: entry.key, delays: [], periods: [] };
+            repeatByKey[entry.keyCode] = bucket;
+        }
         var gap = entry.time - state.time;
         if (state.count === 0) {
-            measured.repeatDelays.push(gap);
+            bucket.delays.push(gap);
         } else {
-            measured.repeatPeriods.push(gap);
+            bucket.periods.push(gap);
         }
         state.count += 1;
         state.time = entry.time;
@@ -310,7 +334,7 @@ have to be stated by hand in a bug report.</p>
 
     function reportLostKeys() {
         if (firstTime === null) return;
-        var now = performance.now();
+        var now = ImeProbe.now();
         Object.keys(pendingKeys).forEach(function (id) {
             var pending = pendingKeys[id];
             if (now - pending.time <= UNMATCHED_KEY_TIMEOUT_MSEC) return;
@@ -372,7 +396,7 @@ have to be stated by hand in a bug report.</p>
     WINDOW_EVENTS.forEach(function (type) {
         window.addEventListener(type, function () {
             report({
-                time: performance.now(),
+                time: ImeProbe.now(),
                 event: 'window ' + type,
                 key: '',
                 keyCode: '',
@@ -410,14 +434,22 @@ have to be stated by hand in a bug report.</p>
         return copied;
     }
 
+    // Each log row is its own element, and reading textContent off the
+    // container concatenates them with no separator, which produced pasted
+    // reports with every row running into the next. Join the rows explicitly.
+    function textOf(container) {
+        return Array.prototype.map.call(container.children, function (row) {
+            return row.textContent;
+        }).join('\n');
+    }
+
     copyButton.addEventListener('click', function () {
         // Measurements first: a pasted report is far more useful with the
         // browser string and the repeat timings above the raw events.
-        var text = measurementsElement.textContent.trim() === ''
-            ? logElement.textContent
-            : Array.prototype.map.call(measurementsElement.children, function (row) {
-                  return row.textContent;
-              }).join('\n') + '\n\n' + logElement.textContent;
+        var measurements = textOf(measurementsElement);
+        var text = measurements === ''
+            ? textOf(logElement)
+            : measurements + '\n\n' + textOf(logElement);
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(
                 function () { confirmCopy('Copied'); },
@@ -437,8 +469,7 @@ have to be stated by hand in a bug report.</p>
         lastByEvent = {};
         pendingKeys = {};
         repeatState = {};
-        measured.repeatDelays = [];
-        measured.repeatPeriods = [];
+        repeatByKey = {};
         measured.variantCycle = [];
         measured.currentCycle = [];
         updateSummary();
