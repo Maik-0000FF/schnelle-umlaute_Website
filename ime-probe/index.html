@@ -32,7 +32,7 @@ you plan to paste the log into a public bug report.</p>
     <li>Then click around the field with the mouse only, without typing.</li>
 </ol>
 <p>Step 1 versus 2 shows whether the leader key cycles or inserts a space. Red lines in
-step 4 mean text arrived with no keystroke behind it. Purple lines mean a key was pressed
+step 4 mean the field grew with no keystroke behind it. Purple lines mean a key was pressed
 but never released, which is what a compositor-side window menu does when it grabs the
 keyboard.</p>
 
@@ -82,7 +82,7 @@ have to be stated by hand in a bug report.</p>
     // preedit, then a separate insertText delivers the character), and both
     // stages land within a few milliseconds of the key that triggered them, so
     // a window comfortably wider than that keeps the normal path unflagged.
-    // Text appearing with no key event inside the window is the reported
+    // The field growing with no key event inside the window is the reported
     // failure: characters arriving from mouse use alone, seconds after the
     // last keystroke.
     var ORPHAN_WINDOW_MSEC = 250;
@@ -138,14 +138,19 @@ have to be stated by hand in a bug report.</p>
     // keydown without an intervening keyup, so the first press wins and the
     // entry keeps its original timestamp: a held key must not look fresh.
     var pendingKeys = {};
+    // Per field: the last observed field length, so an input can be checked for
+    // whether it actually added text. A composition that finishes late replaces
+    // its own preedit and leaves the length untouched, which looks like text
+    // out of nowhere on the timeline but adds nothing.
+    var lastLength = {};
 
-    // Values the page can derive from the event stream. Everything else about
-    // the input method is out of reach from a web page.
     // Auto-repeat timings, kept per key code rather than pooled. Real keys and
     // input-method-consumed keys repeat at different rates on the same machine
     // (a raw Backspace around 14 ms against 28 ms for keyCode 229), so a single
     // pooled median lands between the two and describes neither.
     var repeatByKey = {};
+    // Remaining values the page can derive from the event stream. Everything
+    // else about the input method is out of reach from a web page.
     var measured = {
         variantCycle: [],   // longest variant sequence seen in one composition
         currentCycle: []
@@ -206,7 +211,7 @@ have to be stated by hand in a bug report.</p>
             'data=' + pad(quote(entry.data), COL_DATA) +
             pad(entry.inputType, COL_INPUT_TYPE) +
             'len=' + entry.length +
-            (entry.orphan ? '   <-- text with no keystroke' : '') +
+            (entry.orphan ? '   <-- added text with no keystroke' : '') +
             (entry.lost ? '   <-- pressed, never released' : '');
         logElement.appendChild(line);
         logElement.scrollTop = logElement.scrollHeight;
@@ -216,7 +221,7 @@ have to be stated by hand in a bug report.</p>
         var parts = [];
         parts.push(orphanCount === 0
             ? 'No text without a keystroke.'
-            : orphanCount + ' input(s) with no key event within '
+            : orphanCount + ' added character(s) with no key event within '
               + ORPHAN_WINDOW_MSEC + ' ms (red).');
         parts.push(lostKeyCount === 0
             ? 'No lost key releases.'
@@ -388,9 +393,19 @@ have to be stated by hand in a bug report.</p>
         }
         if (entry.event === 'input') {
             var since = lastKeyActivity[source];
-            entry.orphan = since === undefined
-                || entry.time - since > ORPHAN_WINDOW_MSEC;
+            var before = lastLength[source];
+            // Two conditions, both required. No key event in the window says
+            // the text has no keystroke behind it; a longer field says text was
+            // actually added rather than a preedit being replaced by its own
+            // commit, which is what a late-finishing composition does.
+            var added = typeof entry.length === 'number'
+                && before !== undefined && entry.length > before;
+            entry.orphan = added
+                && (since === undefined || entry.time - since > ORPHAN_WINDOW_MSEC);
             if (entry.orphan) orphanCount += 1;
+        }
+        if (typeof entry.length === 'number') {
+            lastLength[source] = entry.length;
         }
         trackKeyState(entry);
         trackRepeat(entry);
@@ -486,6 +501,7 @@ have to be stated by hand in a bug report.</p>
         lastKeyActivity = {};
         lastByEvent = {};
         pendingKeys = {};
+        lastLength = {};
         repeatState = {};
         repeatByKey = {};
         measured.variantCycle = [];
