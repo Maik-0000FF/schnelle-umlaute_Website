@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IME probe: field inside an iframe</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="frame-body">
+<!-- Mirrors the MDN interactive-examples structure: a plain textarea served as
+     its own document and embedded by the outer page, so the extra focus layer
+     an iframe introduces is part of the test. -->
+<label class="field-label" for="framed">Textarea inside an iframe</label>
+<textarea id="framed" class="field" rows="4" spellcheck="false"
+          placeholder="Type here, then press Alt+Space"></textarea>
+<script src="probe.js"></script>
+<script>
+(function () {
+    'use strict';
+    var FIELD_SOURCE = 'iframe';
+    var field = document.getElementById('framed');
+    ImeProbe.attach(field, FIELD_SOURCE, function (entry) {
+        // The outer page owns the log; '*' as target origin is required because
+        // file:// documents have an opaque origin that cannot be named.
+        window.parent.postMessage(entry, '*');
+    });
+})();
+</script>
+</body>
+</html>

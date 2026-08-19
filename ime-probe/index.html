@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Schnelle Umlaute: IME probe</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>IME probe</h1>
+<p>A diagnostic page for input-method bug reports. Two identical
+<code>&lt;textarea&gt;</code> fields, one directly on the page and one inside an iframe like
+the MDN interactive examples, both logging every input event.</p>
+
+<p class="notice"><strong>Nothing leaves your machine.</strong> This page is a single static
+file with no network access; it only displays what it observes. Note that the log contains
+every character you type into the fields, so type test characters rather than real text if
+you plan to paste the log into a public bug report.</p>
+
+<h2>1. Textarea on the page</h2>
+<label class="field-label" for="plain">No iframe, no framework logic</label>
+<textarea id="plain" class="field" rows="4" spellcheck="false"
+          placeholder="Type here, then press Alt+Space"></textarea>
+
+<h2>2. Textarea inside an iframe</h2>
+<iframe class="frame" src="frame.html" title="Textarea inside an iframe"></iframe>
+
+<h2>How to run it</h2>
+<ol>
+    <li><strong>Hold the base key</strong>, tap the leader key, then release both.</li>
+    <li><strong>Release the base key first</strong>, then tap the leader key.</li>
+    <li>Repeat both after pressing <kbd>Alt+Space</kbd> (close the window menu with <kbd>Esc</kbd>).</li>
+    <li>Then click around the field with the mouse only, without typing.</li>
+</ol>
+<p>Step 1 versus 2 shows whether the leader key cycles or inserts a space. Red lines in
+step 4 mean text arrived with no keystroke behind it. Purple lines mean a key was pressed
+but never released, which is what a compositor-side window menu does when it grabs the
+keyboard.</p>
+
+<h2>Measurements</h2>
+<p>Derived from the events themselves. This page cannot read your input-method
+configuration, so the leader key, overlay placement, addon version and compositor still
+have to be stated by hand in a bug report.</p>
+<div id="measurements" class="measurements"></div>
+
+<h2>Event log</h2>
+<div class="controls">
+    <button id="copy" type="button">Copy log</button>
+    <button id="clear" type="button">Clear</button>
+    <span id="summary"></span>
+</div>
+<div id="log" class="log"></div>
+
+<script src="probe.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var PLAIN_SOURCE = 'page';
+    var WINDOW_SOURCE = 'window';
+
+    // Column widths for the fixed-width log lines.
+    var COL_TIME = 7;
+    var COL_DELTA = 7;
+    var COL_SOURCE = 7;
+    var COL_EVENT = 18;
+    var COL_KEY = 10;
+    var COL_KEYCODE = 4;
+    var COL_COMPOSING = 6;
+    var COL_DATA = 12;
+    var COL_INPUT_TYPE = 22;
+
+    // Milliseconds, rendered relative to the first logged event so the
+    // timeline is readable instead of showing raw performance.now() values.
+    var TIME_DECIMALS = 0;
+
+    // An IME commit reports keyCode 229 with key "Process" instead of a real
+    // key. Highlighting it separates addon-delivered text from raw typing.
+    var IME_KEY_CODE = 229;
+
+    // How long a key or composition event stays a valid cause for the text
+    // that follows. The addon commits in two stages (compositionend clears the
+    // preedit, then a separate insertText delivers the character), and both
+    // stages land within a few milliseconds of the key that triggered them, so
+    // a window comfortably wider than that keeps the normal path unflagged.
+    // Text appearing with no key event inside the window is the reported
+    // failure: characters arriving from mouse use alone, seconds after the
+    // last keystroke.
+    var ORPHAN_WINDOW_MSEC = 250;
+
+    // How long a keydown may stay unmatched before it is reported as lost. A
+    // deliberately held key is normal and would trip a short timeout, so this
+    // sits well above any realistic hold during the steps above. A key that is
+    // still unmatched after this long was almost certainly released into a
+    // compositor grab (the window menu) instead of into the page.
+    var UNMATCHED_KEY_TIMEOUT_MSEC = 3000;
+
+    // How often unmatched keydowns are re-checked. The timeout dominates the
+    // reporting delay, so a coarse tick is enough and keeps the log quiet.
+    var UNMATCHED_CHECK_INTERVAL_MSEC = 500;
+
+    // Events that count as a keyboard cause for the text that follows.
+    // beforeinput is excluded because it always immediately precedes input and
+    // would mask every orphan.
+    var KEY_ACTIVITY_EVENTS = [
+        'keydown',
+        'keyup',
+        'compositionstart',
+        'compositionupdate',
+        'compositionend'
+    ];
+
+    // Window-level focus changes, logged alongside the field events so a focus
+    // loss caused by a compositor window menu lines up with the key that went
+    // missing.
+    var WINDOW_EVENTS = ['blur', 'focus'];
+
+    // How long the copy button confirms before returning to its normal label.
+    var COPY_FEEDBACK_MSEC = 1500;
+
+    var logElement = document.getElementById('log');
+    var summaryElement = document.getElementById('summary');
+    var measurementsElement = document.getElementById('measurements');
+    var clearButton = document.getElementById('clear');
+    var copyButton = document.getElementById('copy');
+    var copyLabel = copyButton.textContent;
+
+    var firstTime = null;
+    var orphanCount = 0;
+    var lostKeyCount = 0;
+    // Per field: when the last key or composition event arrived, so an input
+    // can be checked against ORPHAN_WINDOW_MSEC instead of a one-shot flag
+    // that the addon's two-stage commit would consume on the first input.
+    var lastKeyActivity = {};
+    // Per field and event type: when that event last arrived, so the delta
+    // column shows the auto-repeat period directly.
+    var lastByEvent = {};
+    // Keys currently down, keyed by source and keyCode. Auto-repeat re-fires
+    // keydown without an intervening keyup, so the first press wins and the
+    // entry keeps its original timestamp: a held key must not look fresh.
+    var pendingKeys = {};
+
+    // Values the page can derive from the event stream. Everything else about
+    // the input method is out of reach from a web page.
+    var measured = {
+        repeatDelays: [],   // gap from the initial press to its first repeat
+        repeatPeriods: [],  // gaps between subsequent repeats
+        variantCycle: [],   // longest variant sequence seen in one composition
+        currentCycle: []
+    };
+    // Per source: the key currently repeating, so the first repeat gap can be
+    // told apart from the steady-state period.
+    var repeatState = {};
+
+    function pad(value, width) {
+        var text = String(value);
+        return text.length >= width ? text + ' ' : text + ' '.repeat(width - text.length);
+    }
+
+    // Quoted so whitespace stays visible: a committed space is otherwise
+    // indistinguishable from an empty payload, which makes plain spaces read
+    // like text appearing from nowhere.
+    function quote(value) {
+        return '"' + value + '"';
+    }
+
+    // The median, not the mean: a leader keypress landing inside an auto-repeat
+    // burst produces one short outlier gap, and the mean would absorb it into
+    // the reported period. Both keys report keyCode 229 when the input method
+    // consumes them, so that outlier cannot be filtered out by key identity.
+    function median(values) {
+        if (values.length === 0) return null;
+        var sorted = values.slice().sort(function (a, b) { return a - b; });
+        var middle = Math.floor(sorted.length / 2);
+        return sorted.length % 2 === 1
+            ? sorted[middle]
+            : (sorted[middle - 1] + sorted[middle]) / 2;
+    }
+
+    function classify(entry) {
+        if (entry.lost) return 'row-lost';
+        if (entry.orphan) return 'row-orphan';
+        if (entry.event === 'click' || entry.event === 'focus' || entry.event === 'blur') {
+            return 'row-click';
+        }
+        if (entry.isComposing || entry.keyCode === IME_KEY_CODE) return 'row-composing';
+        return '';
+    }
+
+    function append(entry) {
+        var line = document.createElement('div');
+        var className = classify(entry);
+        if (className) line.className = className;
+        line.textContent =
+            pad((entry.time - firstTime).toFixed(TIME_DECIMALS), COL_TIME) +
+            pad(entry.delta === null || entry.delta === undefined
+                ? '' : '+' + entry.delta.toFixed(TIME_DECIMALS), COL_DELTA) +
+            pad(entry.source, COL_SOURCE) +
+            pad(entry.event, COL_EVENT) +
+            'key=' + pad(entry.key, COL_KEY) +
+            'code=' + pad(entry.keyCode, COL_KEYCODE) +
+            'comp=' + pad(entry.isComposing, COL_COMPOSING) +
+            'data=' + pad(quote(entry.data), COL_DATA) +
+            pad(entry.inputType, COL_INPUT_TYPE) +
+            'len=' + entry.length +
+            (entry.orphan ? '   <-- text with no keystroke' : '') +
+            (entry.lost ? '   <-- pressed, never released' : '');
+        logElement.appendChild(line);
+        logElement.scrollTop = logElement.scrollHeight;
+    }
+
+    function updateSummary() {
+        var parts = [];
+        parts.push(orphanCount === 0
+            ? 'No text without a keystroke.'
+            : orphanCount + ' input(s) with no key event within '
+              + ORPHAN_WINDOW_MSEC + ' ms (red).');
+        parts.push(lostKeyCount === 0
+            ? 'No lost key releases.'
+            : lostKeyCount + ' key(s) pressed but never released (purple).');
+        summaryElement.textContent = parts.join(' ');
+    }
+
+    function renderMeasurement(label, value) {
+        var row = document.createElement('div');
+        row.textContent = label + ': ' + (value === null ? 'not observed yet' : value);
+        measurementsElement.appendChild(row);
+    }
+
+    function updateMeasurements() {
+        var delay = median(measured.repeatDelays);
+        var period = median(measured.repeatPeriods);
+        measurementsElement.textContent = '';
+        renderMeasurement('Auto-repeat delay',
+            delay === null ? null : Math.round(delay) + ' ms');
+        renderMeasurement('Auto-repeat period',
+            period === null ? null : Math.round(period) + ' ms ('
+                + (1000 / period).toFixed(1) + ' Hz, '
+                + measured.repeatPeriods.length + ' samples)');
+        renderMeasurement('Longest variant cycle',
+            measured.variantCycle.length === 0
+                ? null
+                : measured.variantCycle.map(quote).join(' -> '));
+        renderMeasurement('Browser', navigator.userAgent);
+    }
+
+    // Auto-repeat shows up as consecutive keydowns of the same code with no
+    // keyup in between. The first such gap is the initial delay, every later
+    // one a period sample.
+    function trackRepeat(entry) {
+        var state = repeatState[entry.source];
+        if (entry.event === 'keyup') {
+            repeatState[entry.source] = null;
+            return;
+        }
+        if (entry.event !== 'keydown') return;
+        if (!state || state.keyCode !== entry.keyCode) {
+            repeatState[entry.source] = { keyCode: entry.keyCode, time: entry.time, count: 0 };
+            return;
+        }
+        var gap = entry.time - state.time;
+        if (state.count === 0) {
+            measured.repeatDelays.push(gap);
+        } else {
+            measured.repeatPeriods.push(gap);
+        }
+        state.count += 1;
+        state.time = entry.time;
+    }
+
+    // The variant sequence of one composition, which is what the leader key
+    // actually cycles through for that base character.
+    function trackVariants(entry) {
+        if (entry.event === 'compositionstart') {
+            measured.currentCycle = [];
+        } else if (entry.event === 'compositionupdate') {
+            var last = measured.currentCycle[measured.currentCycle.length - 1];
+            if (entry.data !== '' && entry.data !== last) {
+                measured.currentCycle.push(entry.data);
+            }
+        } else if (entry.event === 'compositionend') {
+            if (measured.currentCycle.length > measured.variantCycle.length) {
+                measured.variantCycle = measured.currentCycle;
+            }
+            measured.currentCycle = [];
+        }
+    }
+
+    // A keydown with no matching keyup is the mechanism behind the reported
+    // stuck state: the addon keeps the key marked as held, so its reset path
+    // never runs. Reported from a timer rather than on the next event, because
+    // the failing case produces no further events at all.
+    function trackKeyState(entry) {
+        // Keys the input method consumes all report keyCode 229, and their
+        // release is either swallowed or re-reported under the real code (a
+        // held base key commits on a "keyup Process 229", while a consumed
+        // Space comes back as "keyup 32"). Pairing them by code would strand
+        // entries that were never lost, so only real key codes are tracked.
+        // Alt+Space is unaffected: with Alt held the addon does not consume
+        // Space, so both arrive as codes 18 and 32.
+        if (entry.keyCode === IME_KEY_CODE) return;
+        var id = entry.source + '/' + entry.keyCode;
+        if (entry.event === 'keydown') {
+            if (pendingKeys[id] === undefined) {
+                pendingKeys[id] = { time: entry.time, key: entry.key, entry: entry };
+            }
+        } else if (entry.event === 'keyup') {
+            delete pendingKeys[id];
+        }
+    }
+
+    function reportLostKeys() {
+        if (firstTime === null) return;
+        var now = performance.now();
+        Object.keys(pendingKeys).forEach(function (id) {
+            var pending = pendingKeys[id];
+            if (now - pending.time <= UNMATCHED_KEY_TIMEOUT_MSEC) return;
+            delete pendingKeys[id];
+            lostKeyCount += 1;
+            append({
+                time: now,
+                delta: now - pending.time,
+                source: id.slice(0, id.lastIndexOf('/')),
+                event: 'keyup MISSING',
+                key: pending.key,
+                keyCode: pending.entry.keyCode,
+                isComposing: false,
+                data: '',
+                inputType: '',
+                length: pending.entry.length,
+                lost: true
+            });
+            updateSummary();
+        });
+    }
+
+    function report(entry) {
+        var source = entry.source;
+        if (firstTime === null) firstTime = entry.time;
+
+        var previous = lastByEvent[source + '/' + entry.event];
+        entry.delta = previous === undefined ? null : entry.time - previous;
+        lastByEvent[source + '/' + entry.event] = entry.time;
+
+        if (KEY_ACTIVITY_EVENTS.indexOf(entry.event) !== -1) {
+            lastKeyActivity[source] = entry.time;
+        }
+        if (entry.event === 'input') {
+            var since = lastKeyActivity[source];
+            entry.orphan = since === undefined
+                || entry.time - since > ORPHAN_WINDOW_MSEC;
+            if (entry.orphan) orphanCount += 1;
+        }
+        trackKeyState(entry);
+        trackRepeat(entry);
+        trackVariants(entry);
+        append(entry);
+        updateSummary();
+        updateMeasurements();
+    }
+
+    ImeProbe.attach(document.getElementById('plain'), PLAIN_SOURCE, report);
+
+    // The iframe field cannot be reached across the frame boundary on a
+    // file:// origin, so it forwards its probe entries instead.
+    window.addEventListener('message', function (event) {
+        if (!event.data || event.data.type !== ImeProbe.MESSAGE_TYPE) return;
+        report(event.data);
+    });
+
+    // Window-level focus changes carry no field, so they are reported directly
+    // rather than through the shared probe.
+    WINDOW_EVENTS.forEach(function (type) {
+        window.addEventListener(type, function () {
+            report({
+                time: performance.now(),
+                event: 'window ' + type,
+                key: '',
+                keyCode: '',
+                isComposing: false,
+                data: '',
+                inputType: '',
+                length: '',
+                source: WINDOW_SOURCE
+            });
+        });
+    });
+
+    function confirmCopy(message) {
+        copyButton.textContent = message;
+        setTimeout(function () { copyButton.textContent = copyLabel; }, COPY_FEEDBACK_MSEC);
+    }
+
+    // execCommand is the fallback rather than the exception: the async
+    // clipboard API needs a secure context, and a page opened straight from
+    // disk over file:// does not always qualify.
+    function copyViaTextarea(text) {
+        var carrier = document.createElement('textarea');
+        carrier.value = text;
+        carrier.setAttribute('readonly', '');
+        carrier.className = 'offscreen';
+        document.body.appendChild(carrier);
+        carrier.select();
+        var copied = false;
+        try {
+            copied = document.execCommand('copy');
+        } catch (error) {
+            copied = false;
+        }
+        document.body.removeChild(carrier);
+        return copied;
+    }
+
+    copyButton.addEventListener('click', function () {
+        // Measurements first: a pasted report is far more useful with the
+        // browser string and the repeat timings above the raw events.
+        var text = measurementsElement.textContent.trim() === ''
+            ? logElement.textContent
+            : Array.prototype.map.call(measurementsElement.children, function (row) {
+                  return row.textContent;
+              }).join('\n') + '\n\n' + logElement.textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(
+                function () { confirmCopy('Copied'); },
+                function () { confirmCopy(copyViaTextarea(text) ? 'Copied' : 'Copy failed'); }
+            );
+            return;
+        }
+        confirmCopy(copyViaTextarea(text) ? 'Copied' : 'Copy failed');
+    });
+
+    clearButton.addEventListener('click', function () {
+        logElement.textContent = '';
+        firstTime = null;
+        orphanCount = 0;
+        lostKeyCount = 0;
+        lastKeyActivity = {};
+        lastByEvent = {};
+        pendingKeys = {};
+        repeatState = {};
+        measured.repeatDelays = [];
+        measured.repeatPeriods = [];
+        measured.variantCycle = [];
+        measured.currentCycle = [];
+        updateSummary();
+        updateMeasurements();
+    });
+
+    setInterval(reportLostKeys, UNMATCHED_CHECK_INTERVAL_MSEC);
+    updateSummary();
+    updateMeasurements();
+})();
+</script>
+</body>
+</html>
